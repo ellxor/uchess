@@ -86,12 +86,9 @@ struct Position make_move(struct Position pos, struct Move move) {
 
 	// swap white and black castling rights
 	bitboard white_castling = 0b001100000;
-	bitboard black_castling = 0b110000000;
-	bitboard both_castling  = 0b111100000;
 
-	bits = (bits & ~both_castling)
-	     | ((bits & white_castling) << 2)
-	     | ((bits & black_castling) >> 2);
+	bits = pext(bits, ~white_castling)
+	     | ((bits & white_castling) << 2);
 
 	occ  = occupied(pos);
 	bits = pdep(bits, ~occ);
