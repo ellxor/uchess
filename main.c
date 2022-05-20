@@ -2,7 +2,6 @@
 #include "movegen.h"
 #include "position.h"
 #include <stdio.h>
-#include <string.h>
 
 size_t perft(struct Position pos, size_t depth) {
 	if (depth == 0) return 1;

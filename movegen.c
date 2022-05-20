@@ -1,7 +1,6 @@
 #include "bits.h"
 #include "movegen.h"
 #include <stdbool.h>
-#include <string.h>
 
 static inline
 void append(struct MoveList *list, struct Move move) {
@@ -137,11 +136,11 @@ void generate_king_moves(struct Position pos, struct PositionInfo info, struct M
 	enum { C1 = 2, E1 = 4, G1 = 6 };
 
 	if (info.white_kingside && !(occ & kingside_occ) && !(attacked & kingside_attacked)) {
-		append(list, (struct Move){ E1, G1, King, true });
+		append(list, (struct Move){ E1, G1, King, 1 });
 	}
 
 	if (info.white_queenside && !(occ & queenside_occ) && !(attacked & queenside_attacked)) {
-		append(list, (struct Move){ E1, C1, King, true });
+		append(list, (struct Move){ E1, C1, King, 1 });
 	}
 }
 

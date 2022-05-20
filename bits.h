@@ -2,6 +2,7 @@
 #define BITS_H_
 
 #include <stdint.h>
+#include <string.h>
 #include <x86intrin.h>
 
 typedef uint8_t square;
