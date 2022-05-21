@@ -11,6 +11,10 @@ struct Position {
 	bitboard white, X,Y,Z;
 };
 
+enum Color {
+	White, Black
+};
+
 struct PositionInfo {
 	bitboard en_passant:      3,
 	         has_en_passant:  1,
