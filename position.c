@@ -25,16 +25,15 @@ struct Position make_move(struct Position pos, struct Move move) {
 	clear |= 1L << move.start;
 	clear |= 1L << move.end;
 
+	bitboard ep = (bitboard)info.en_passant << 40;
+
 	// remove captured en-passant pawn
-	if (info.has_en_passant && move.piece == Pawn) {
-		square ep = info.en_passant + 40;
-		if (move.end == ep) clear |= 1L << (ep + S);
-	}
+	if (move.piece == Pawn)
+		clear |= shift(S, ep & (1L << move.end));
 
 	// remove castling rook
-	if (move.castling) {
-		clear |= 1L << ((move.end < move.start) ? A1 : H1);
-	}
+	if (move.castling)
+		clear |= (move.end < move.start) ? (1 << A1) : (1 << H1);
 
 	// clear bits
 	pos.white &= ~clear;
@@ -66,11 +65,11 @@ struct Position make_move(struct Position pos, struct Move move) {
 	if (move.end   == H8) info.black_kingside  = 0;
 
 	// update new en-passant square
-	info.has_en_passant = 0;
+	info.en_passant = 0;
 
 	if (move.piece == Pawn && move.end - move.start == N+N) {
-		info.en_passant = ((move.start + move.end) >> 1) - 40;
-		info.has_en_passant = 1;
+		square ep = (move.start + move.end) >> 1;
+		info.en_passant = 1 << (ep - 16);
 	}
 
 	info.side_to_move = !info.side_to_move;
@@ -85,7 +84,7 @@ struct Position make_move(struct Position pos, struct Move move) {
 	memcpy(&bits, &info, sizeof info);
 
 	// swap white and black castling rights
-	bitboard white_castling = 0b001100000;
+	bitboard white_castling = 0b0011000000000;
 
 	bits = pext(bits, ~white_castling)
 	     | ((bits & white_castling) << 2);

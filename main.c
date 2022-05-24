@@ -31,7 +31,6 @@ int main() {
 
 	struct PositionInfo info = {
 		.en_passant      = 0,
-		.has_en_passant  = 0,
 		.side_to_move    = 0,
 		.white_kingside  = 1,
 		.white_queenside = 1,

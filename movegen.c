@@ -170,13 +170,10 @@ void generate_pawn_moves(struct Position pos, struct PositionInfo info, bitboard
 	bitboard occ = occupied(pos);
 	bitboard them = occ & ~pos.white;
 
-	if (info.has_en_passant) {
-		square ep = 40 + info.en_passant;
-		them |= 1L << ep;
+	bitboard en_passant = (bitboard)info.en_passant << 40;
 
-		// allow en passant out of check
-		targets |= shift(N, targets) & (1L << ep);
-	}
+	targets |= shift(N, targets) & en_passant;
+	them |= en_passant;
 
 	bitboard single_up = shift(N, pawns) & ~occ;
 	bitboard double_up = shift(N, single_up & RANK3) & ~occ;
@@ -214,8 +211,7 @@ void filter_pinned_moves(struct Position pos, struct PositionInfo info, struct M
 	rooks |= queens;
 
 	// always check en_passant for possible pins
-	square ep = info.en_passant + 40;
-	bitboard en_passant = info.has_en_passant ? 1L << ep : 0;
+	bitboard en_passant = (bitboard)info.en_passant << 40;
 
 	// reset length to zero
 	size_t length = list->length;
