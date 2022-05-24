@@ -217,8 +217,6 @@ void filter_pinned_moves(struct Position pos, struct PositionInfo info, struct M
 	square ep = info.en_passant + 40;
 	bitboard en_passant = info.has_en_passant ? 1L << ep : 0;
 
-	candidates |= en_passant;
-
 	// reset length to zero
 	size_t length = list->length;
 	list->length = 0;
