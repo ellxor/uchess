@@ -87,4 +87,4 @@ pieces and allowing check.
 |position5|    5| 89941194|         208|
 |position6|    5|164075551|         225|
 
-_(measured on Intel i5-9400)_
+_(measured on Intel i5-9400, using gcc 10.2.1)_
