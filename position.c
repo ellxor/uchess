@@ -68,8 +68,7 @@ struct Position make_move(struct Position pos, struct Move move) {
 	info.en_passant = 0;
 
 	if (move.piece == Pawn && move.end - move.start == N+N) {
-		square ep = (move.start + move.end) >> 1;
-		info.en_passant = 1 << (ep - 16);
+		info.en_passant = 1 << (move.start & 7);
 	}
 
 	info.side_to_move = !info.side_to_move;
