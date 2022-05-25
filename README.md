@@ -44,6 +44,10 @@ there must be at least 32. Therefore, the `pext` instruction is required to
 align the info to the correct bit positions.
 
 ```C
+#include <stdint.h>
+
+typedef uint64_t bitboard;
+
 enum PieceType {
 	None, Pawn, Knight, Bishop, Rook, Queen, King, Info
 };
