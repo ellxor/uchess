@@ -58,17 +58,15 @@ struct Position make_move(struct Position pos, struct Move move) {
 	if (move.end   == A8) info &= ~BQ_MASK;
 	if (move.end   == H8) info &= ~BK_MASK;
 
-	// clear en passant square
+	// clear en passant square and swap white and black castling rights
 	info &= ~EP_MASK;
-
-	// swap white and black castling rights
-	info = ((info << 2) | (info >> 2)) & CA_MASK;
+	info  = ((info << 2) | (info >> 2)) & CA_MASK;
 
 	// rotate board
-	pos.white = reverse(pos.white);
 	pos.X = reverse(pos.X);
 	pos.Y = reverse(pos.Y);
 	pos.Z = reverse(pos.Z);
+	pos.white = reverse(pos.white);
 
 	// update new en-passant square
 	if (move.piece == Pawn && move.end - move.start == N+N)
