@@ -13,10 +13,8 @@ void set_square(struct Position *pos, square sq, enum PieceType T) {
 
 struct Position make_move(struct Position pos, struct Move move) {
 	bitboard occ = occupied(pos);
-	bitboard bits = pext(extract(pos, Info), ~occ);
-
-	struct PositionInfo info;
-	memcpy(&info, &bits, sizeof info);
+	bitboard info = pext(extract(pos, Info), ~occ);\
+	bitboard ep_mask = (info & EP_MASK) << 40;
 
 	enum { A1 = 0, E1 = 4, H1 = 7, A8 = 56, H8 = 63 };
 
@@ -25,11 +23,9 @@ struct Position make_move(struct Position pos, struct Move move) {
 	clear |= 1L << move.start;
 	clear |= 1L << move.end;
 
-	bitboard ep = (bitboard)info.en_passant << 40;
-
 	// remove captured en-passant pawn
 	if (move.piece == Pawn)
-		clear |= shift(S, ep & (1L << move.end));
+		clear |= shift(S, ep_mask & (1L << move.end));
 
 	// remove castling rook
 	if (move.castling)
@@ -48,28 +44,25 @@ struct Position make_move(struct Position pos, struct Move move) {
 	// set castled rook
 	if (move.castling) {
 		square mid = (move.start + move.end) >> 1;
-		pos.white |= 1L << mid;
-
 		set_square(&pos, mid, Rook);
+
+		pos.white |= 1L << mid;
 	}
 
 	// update castling rights
-	if (move.piece == King) {
-		info.white_kingside = 0;
-		info.white_queenside = 0;
-	}
+	if (move.piece == King)
+		info &= ~(WK_MASK | WQ_MASK);
 
-	if (move.start == A1) info.white_queenside = 0;
-	if (move.start == H1) info.white_kingside  = 0;
-	if (move.end   == A8) info.black_queenside = 0;
-	if (move.end   == H8) info.black_kingside  = 0;
+	if (move.start == A1) info &= ~WQ_MASK;
+	if (move.start == H1) info &= ~WK_MASK;
+	if (move.end   == A8) info &= ~BQ_MASK;
+	if (move.end   == H8) info &= ~BK_MASK;
 
-	// update new en-passant square
-	info.en_passant = 0;
+	// clear en passant square
+	info &= ~EP_MASK;
 
-	if (move.piece == Pawn && move.end - move.start == N+N) {
-		info.en_passant = 1 << (move.start & 7);
-	}
+	// swap white and black castling rights
+	info = ((info << 2) | (info >> 2)) & CA_MASK;
 
 	// rotate board
 	pos.white = reverse(pos.white);
@@ -77,21 +70,17 @@ struct Position make_move(struct Position pos, struct Move move) {
 	pos.Y = reverse(pos.Y);
 	pos.Z = reverse(pos.Z);
 
+	// update new en-passant square
+	if (move.piece == Pawn && move.end - move.start == N+N)
+		info |= 1 << (move.start & 7);
+
 	// write info bits
-	memcpy(&bits, &info, sizeof info);
+	occ = occupied(pos);
+	info = pdep(info, ~occ);
 
-	// swap white and black castling rights
-	bitboard white_castling = 0b001100000000;
-
-	bits = pext(bits, ~white_castling)
-	     | ((bits & white_castling) << 2);
-
-	occ  = occupied(pos);
-	bits = pdep(bits, ~occ);
-
-	pos.X |= bits;
-	pos.Y |= bits;
-	pos.Z |= bits;
+	pos.X |= info;
+	pos.Y |= info;
+	pos.Z |= info;
 
 	// swap white & black bitboards
 	pos.white = occ & ~pos.white;

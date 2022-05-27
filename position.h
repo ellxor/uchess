@@ -11,17 +11,13 @@ struct Position {
 	bitboard white, X,Y,Z;
 };
 
-enum Color {
-	White, Black
-};
-
-struct PositionInfo {
-	bitboard en_passant:      8,
-	         white_kingside:  1,
-	         white_queenside: 1,
-	         black_kingside:  1,
-	         black_queenside: 1;
-
+enum PositionInfo {
+	EP_MASK = 0x0ff,
+	WK_MASK = 0x100,
+	WQ_MASK = 0x200,
+	BK_MASK = 0x400,
+	BQ_MASK = 0x800,
+	CA_MASK = 0xf00,
 };
 
 static inline bitboard extract(struct Position pos, enum PieceType T) {

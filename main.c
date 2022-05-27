@@ -29,19 +29,12 @@ int main() {
 		.Z     = 0x9900000000000099,
 	};
 
-	struct PositionInfo info = {
-		.en_passant      = 0,
-		.white_kingside  = 1,
-		.white_queenside = 1,
-		.black_kingside  = 1,
-		.black_queenside = 1,
-	};
+	bitboard mask = WK_MASK | WQ_MASK | BK_MASK | BQ_MASK;
+	mask = pdep(mask, ~occupied(pos));
 
-	bitboard info_bits;
-	memcpy(&info_bits, &info, sizeof info);
-
-	bitboard mask = pdep(info_bits, ~occupied(pos));
-	pos.X |= mask, pos.Y |= mask, pos.Z |= mask;
+	pos.X |= mask;
+	pos.Y |= mask;
+	pos.Z |= mask;
 
 	struct MoveList list = generate_moves(pos);
 	enum { depth = 6 };

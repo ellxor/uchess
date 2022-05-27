@@ -1,5 +1,6 @@
 #include "bits.h"
 #include "movegen.h"
+#include "position.h"
 #include <stdbool.h>
 
 static inline
@@ -115,7 +116,7 @@ void generate_partial_moves(struct Position pos, enum PieceType T, bitboard targ
 }
 
 static inline
-void generate_king_moves(struct Position pos, struct PositionInfo info, struct MoveList *list) {
+void generate_king_moves(struct Position pos, struct MoveList *list) {
 	square sq = lsb(extract(pos, King) & pos.white);
 	bitboard attacked = enemy_attacks(pos);
 	bitboard attacks = king_attacks(sq) & ~attacked & ~pos.white;
@@ -128,6 +129,10 @@ void generate_king_moves(struct Position pos, struct PositionInfo info, struct M
 
 	// generate castling moves
 	bitboard occ = occupied(pos);
+
+	bitboard info = extract(pos, Info);
+	info = pext(info, ~occ);
+
 	bitboard kingside_occ  = 0b01100000;
 	bitboard queenside_occ = 0b00001110;
 	bitboard kingside_attacked  = 0b01110000;
@@ -135,11 +140,11 @@ void generate_king_moves(struct Position pos, struct PositionInfo info, struct M
 
 	enum { C1 = 2, E1 = 4, G1 = 6 };
 
-	if (info.white_kingside && !(occ & kingside_occ) && !(attacked & kingside_attacked)) {
+	if ((info & WK_MASK) && !(occ & kingside_occ) && !(attacked & kingside_attacked)) {
 		append(list, (struct Move){ E1, G1, King, 1 });
 	}
 
-	if (info.white_queenside && !(occ & queenside_occ) && !(attacked & queenside_attacked)) {
+	if ((info & WQ_MASK) && !(occ & queenside_occ) && !(attacked & queenside_attacked)) {
 		append(list, (struct Move){ E1, C1, King, 1 });
 	}
 }
@@ -164,13 +169,16 @@ void append_pawn_moves(bitboard mask, square shift, bool promotion, struct MoveL
 }
 
 static inline
-void generate_pawn_moves(struct Position pos, struct PositionInfo info, bitboard targets, struct MoveList *list) {
+void generate_pawn_moves(struct Position pos, bitboard targets, struct MoveList *list) {
 	bitboard pawns = extract(pos, Pawn) & pos.white;
 
 	bitboard occ = occupied(pos);
 	bitboard them = occ & ~pos.white;
 
-	bitboard en_passant = (bitboard)info.en_passant << 40;
+	bitboard info = extract(pos, Info);
+	info = pext(info, ~occ);
+
+	bitboard en_passant = (info & EP_MASK) << 40;
 
 	targets |= shift(N, targets) & en_passant;
 	them |= en_passant;
@@ -198,7 +206,7 @@ void generate_pawn_moves(struct Position pos, struct PositionInfo info, bitboard
 }
 
 static inline
-void filter_pinned_moves(struct Position pos, struct PositionInfo info, struct MoveList *list) {
+void filter_pinned_moves(struct Position pos, struct MoveList *list) {
 	square ksq = lsb(extract(pos, King) & pos.white);
 	bitboard candidates = queen_attacks(ksq, pos.white) & pos.white;
 
@@ -210,8 +218,11 @@ void filter_pinned_moves(struct Position pos, struct PositionInfo info, struct M
 	bishops |= queens;
 	rooks |= queens;
 
+	bitboard info = extract(pos, Info);
+	info = pext(info, ~occ);
+
 	// always check en_passant for possible pins
-	bitboard en_passant = (bitboard)info.en_passant << 40;
+	bitboard en_passant = (info & EP_MASK) << 40;
 
 	// reset length to zero
 	size_t length = list->length;
@@ -245,9 +256,6 @@ struct MoveList generate_moves(struct Position pos) {
 	bitboard occ = occupied(pos);
 	bitboard bits = pext(extract(pos, Info), ~occ);
 
-	struct PositionInfo info;
-	memcpy(&info, &bits, sizeof info);
-
 	bitboard checkers = enemy_checks(pos);
 	bitboard king = extract(pos, King) & pos.white;
 
@@ -261,14 +269,14 @@ struct MoveList generate_moves(struct Position pos) {
 		targets &= checkers | line_between(king, checkers);
 	}
 
-	generate_pawn_moves(pos, info, targets, &list);
+	generate_pawn_moves(pos, targets, &list);
 	generate_partial_moves(pos, Knight, targets, &list);
 	generate_partial_moves(pos, Bishop, targets, &list);
 	generate_partial_moves(pos, Rook,   targets, &list);
 	generate_partial_moves(pos, Queen,  targets, &list);
-	filter_pinned_moves(pos, info, &list);
+	filter_pinned_moves(pos, &list);
 
 king_moves:
-	generate_king_moves(pos, info, &list);
+	generate_king_moves(pos, &list);
 	return list;
 }
