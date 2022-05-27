@@ -80,11 +80,11 @@ pieces and allowing check.
 ### Performance:
 |position |depth|    nodes|speed (Mnps)|
 |---------|:---:|:-------:|:----------:|
-|startpos |    6|119060324|         176|
-|kiwipete |    5|193690690|         226|
-|position3|    7|178633661|         157|
-|position4|    6|706045033|         227|
-|position5|    5| 89941194|         208|
-|position6|    5|164075551|         225|
+|startpos |    6|119060324|         192|
+|kiwipete |    5|193690690|         236|
+|position3|    7|178633661|         159|
+|position4|    6|706045033|         241|
+|position5|    5| 89941194|         220|
+|position6|    5|164075551|         235|
 
-_(measured on Intel i5-9400, using gcc 10.2.1)_
+_(measured on Intel i5-9400, using clang 11.0.1)_
