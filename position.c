@@ -71,8 +71,6 @@ struct Position make_move(struct Position pos, struct Move move) {
 		info.en_passant = 1 << (move.start & 7);
 	}
 
-	info.side_to_move = !info.side_to_move;
-
 	// rotate board
 	pos.white = reverse(pos.white);
 	pos.X = reverse(pos.X);
@@ -83,7 +81,7 @@ struct Position make_move(struct Position pos, struct Move move) {
 	memcpy(&bits, &info, sizeof info);
 
 	// swap white and black castling rights
-	bitboard white_castling = 0b0011000000000;
+	bitboard white_castling = 0b001100000000;
 
 	bits = pext(bits, ~white_castling)
 	     | ((bits & white_castling) << 2);
