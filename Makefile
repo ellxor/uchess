@@ -1,8 +1,8 @@
 CC=clang
 CFLAGS=-O3 -march=native
 
-SRC=src/bits.c src/movegen.c src/position.c
-OBJ=bits.o movegen.o position.o
+SRC=src/bits.c src/movegen.c src/position.c src/text.c
+OBJ=bits.o movegen.o position.o text.o
 LIB=libuchess.a
 
 WARNINGS=-Wall -Wextra -pedantic -std=c99
