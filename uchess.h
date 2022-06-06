@@ -12,8 +12,16 @@ enum PieceType {
 	None, Pawn, Knight, Bishop, Rook, Queen, King, Info,
 };
 
+enum PositionInfo {
+	EP_MASK = 0x0ff,  // 8-bit en passant mask (file)
+	WK_MASK = 0x100,  // castling masks
+	WQ_MASK = 0x200,
+	BK_MASK = 0x400,
+	BQ_MASK = 0x800,
+};
+
 struct Position {
-	bitboard white, X,Y,Z;
+	bitboard white, X, Y, Z;
 };
 
 struct Move {
