@@ -26,7 +26,7 @@ static inline bitboard shiftW(bitboard bb) { return (bb & ~AFILE) >> 1; }
 #define shift3(x,y,z,bb) shift##x(shift##y(shift##z(bb)))
 
 #define _nargs(_1,_2,_3,_4,_N,...) _N
-#define nargs(...) _nargs(__VA_ARGS__,3,2,1)
+#define nargs(...) _nargs(__VA_ARGS__,3,2,1,0)
 
 #define __shift(n,...) shift##n(__VA_ARGS__)
 #define _shift(n,...) __shift(n, __VA_ARGS__)
