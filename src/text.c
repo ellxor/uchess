@@ -59,6 +59,10 @@ enum PieceType lookup[0x80] = {
 
 static inline PRINTF(2,3)
 void log_error(struct Parser *parser, const char *fmt, ...) {
+	// silence output on NULL
+	if (parser->output == NULL)
+		return;
+
 	fprintf(parser->output, RED "error: " RESET);
 
 	va_list args;
