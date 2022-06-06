@@ -25,4 +25,7 @@ struct MoveList {
 	size_t length;
 };
 
+struct MoveList generate_moves(struct Position pos);
+struct Position make_move(struct Position pos, struct Move move);
+
 #endif //UCHESS_H_
