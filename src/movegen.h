@@ -5,12 +5,14 @@
 #include <stdint.h>
 #include "position.h"
 
+#define MAX_MOVELIST_LENGTH 256
+
 struct Move {
 	uint16_t start: 6, end: 6, piece: 3, castling: 1;
 };
 
 struct MoveList {
-	struct Move moves[256];
+	struct Move moves[MAX_MOVELIST_LENGTH];
 	size_t length;
 };
 
