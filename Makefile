@@ -9,14 +9,17 @@ WARNINGS=-Wall -Wextra -pedantic -std=c99
 IGNORE=-Wno-missing-field-initializers -Wno-gnu-binary-literal
 WARNINGS+=$(IGNORE)
 
-default: lib
+default: $(LIB)
 
 unittest:
 	$(CC) -o $@ $(SRC) src/unittest.c $(CFLAGS) $(WARNINGS)
 	@echo
 	./$@
 
-lib:
+$(LIB):
 	$(CC) -c $(SRC) $(CFLAGS) $(WARNINGS)
 	ar rcs $(LIB) $(OBJ)
+
+clean:
 	rm -rf $(OBJ)
+	rm -rf $(LIB)
