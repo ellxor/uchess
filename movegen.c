@@ -253,9 +253,6 @@ void filter_pinned_moves(struct Position pos, struct MoveList *list) {
 struct MoveList generate_moves(struct Position pos) {
 	struct MoveList list = {.length = 0};
 
-	bitboard occ = occupied(pos);
-	bitboard bits = pext(extract(pos, Info), ~occ);
-
 	bitboard checkers = enemy_checks(pos);
 	bitboard king = extract(pos, King) & pos.white;
 
