@@ -38,6 +38,11 @@ static inline square lsb(bitboard bb) {
 	return __builtin_ctzll(bb);
 }
 
+static inline int clz(bitboard bb) {
+	assert(bb != 0 && "bitboard cannot be zero");
+	return __builtin_clzll(bb);
+}
+
 static inline bitboard pdep(bitboard bb, bitboard mask) {
 	return _pdep_u64(bb, mask);
 }

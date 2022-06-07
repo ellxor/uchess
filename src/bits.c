@@ -19,7 +19,7 @@ bitboard sliding_attacks(square sq, bitboard mask, bitboard occ) {
 	bitboard low = occ & ((1L << sq) - 1);
 	bitboard high = occ & ~low;
 
-	low = 0x8000000000000000 >> __builtin_clzll(low | 1);
+	low = 0x8000000000000000 >> clz(low | 1);
 	return mask & (high ^ (high - low)) & ~(1L << sq);
 }
 
