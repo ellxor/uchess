@@ -9,8 +9,8 @@ struct State {
 	struct Position pos;
 	enum Color side_to_move;
 
-	int fify_move_clock;
-	int movenumber;
+	unsigned fify_move_clock;
+	unsigned movenumber;
 };
 
 #endif //STATE_H_
