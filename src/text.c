@@ -315,7 +315,7 @@ void write_unsigned(char **buffer, size_t *count, unsigned x) {
 	size_t length = 0;
 
 	do { tmp[length++] = (x % 10) + '0'; } while(x /= 10);
-	count += length;
+	*count += length;
 
 	if (*buffer) {
 		while (length --> 0) {
