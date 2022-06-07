@@ -1,11 +1,14 @@
 #include "text.h"
+
 #include "bits.h"
+#include "movegen.h"
 #include "position.h"
 
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(__GNUC__) || defined(__clang__)
 #define PRINTF(fmt, args) __attribute__((format (printf, fmt, args)))
@@ -15,7 +18,6 @@
 
 #define RED	"\033[31;1m"
 #define RESET	"\033[0m"
-
 
 struct Parser {
 	FILE *output;
@@ -84,6 +86,18 @@ void set_square(struct Position *pos, int sq, enum PieceType T) {
 	pos->X |= (bitboard)((T >> 0) & 1) << sq;
 	pos->Y |= (bitboard)((T >> 1) & 1) << sq;
 	pos->Z |= (bitboard)((T >> 2) & 1) << sq;
+}
+
+
+static inline
+enum PieceType get_square(struct Position pos, int sq) {
+	enum PieceType T;
+
+	T |= ((pos.X >> sq) & 1) << 0;
+	T |= ((pos.Y >> sq) & 1) << 1;
+	T |= ((pos.Z >> sq) & 1) << 2;
+
+	return T;
 }
 
 struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
@@ -164,7 +178,11 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 	}
 
 	// castling rights
-	while (peek_next(&parser) != ' ') {
+	if (peek_next(&parser) == '-') {
+		chop_next(&parser);
+	}
+
+	else while (peek_next(&parser) != ' ') {
 		switch (chop_next(&parser)) {
 			case 'K': info |= WK_MASK; break;
 			case 'Q': info |= WQ_MASK; break;
@@ -187,6 +205,7 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 		goto error;
 	}
 
+	// en-passant square
 	if (peek_next(&parser) == '-') {
 		chop_next(&parser);
 	}
@@ -227,6 +246,10 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 
 	state.fify_move_clock = chop_int(&parser);
 
+	if (state.fify_move_clock > 100) {
+		log_error(&parser, "fifty move clock must in range 0..100");
+	}
+
 	if (peek_next(&parser) != '\0') {
 		if (chop_next(&parser) != ' ') {
 			log_error(&parser, "expected space before full-move number");
@@ -255,11 +278,252 @@ error:
 }
 
 
+static inline
+void write_char(char **buffer, size_t *count, char c) {
+	if (*buffer) {
+		**buffer = c;
+		*buffer += 1;
+	}
+
+	*count += 1;
+}
+
+static inline
+void write_string(char **buffer, size_t *count, const char *str) {
+	size_t length = strlen(str);
+
+	if (*buffer) {
+		memcpy(*buffer, str, length);
+		*buffer += length;
+	}
+
+	*count += length;
+}
+
+static inline
+void write_int(char **buffer, size_t *count, unsigned x) {
+	enum { MAX_DIGITS = 10 };
+
+	char tmp[MAX_DIGITS];
+	size_t length = 0;
+
+	while (x != 0) {
+		tmp[length++] = x % 10;
+		x /= 10;
+	}
+
+	if (*buffer) {
+		while (length--) {
+			**buffer = tmp[length];
+			*buffer += 1;
+		}
+	}
+
+	count += length;
+}
+
 size_t generate_fen(struct State state, char *buffer) {
-	return 0;
+	size_t count = 0;
+
+	bitboard occ = occupied(state.pos);
+	bitboard white, black;
+
+	if (state.side_to_move == WHITE) {
+		white = state.pos.white;
+		black = occ & ~white;
+	} else {
+		black = state.pos.white;
+		white = occ & ~black;
+	}
+
+	bitboard info = extract(state.pos, Info);
+	info = pext(info, ~occ);
+
+	// write board
+	for (int rank = 7; rank >= 0; rank--) {
+		int empty = 0;
+
+		for (int file = 0; file < 8; file++) {
+			int square = 8*rank + file;
+
+			// flip square if reversed
+			if (state.side_to_move == BLACK) square ^= 56;
+
+			enum PieceType piece = get_square(state.pos, square);
+			bitboard mask = 1L << square;
+
+			if (piece == None || piece == Info) {
+				empty++;
+			}
+
+			else {
+				if (empty) {
+					write_char(&buffer, &count, empty + '0');
+					empty = 0;
+				}
+
+				unsigned char c = " PNBRQK "[piece];
+				if (mask & black) c |= 0x20; // lower case
+
+				write_char(&buffer, &count, c);
+			}
+		}
+
+		if (empty) {
+			write_char(&buffer, &count, empty + '0');
+		}
+
+		if (rank != 0) {
+			write_char(&buffer, &count, '/');
+		}
+	}
+
+	// write side-to-move
+	write_char(&buffer, &count, ' ');
+	write_char(&buffer, &count, state.side_to_move == WHITE ? 'w' : 'b');
+
+	// write castling rights
+	write_char(&buffer, &count, ' ');
+
+	if ((info & CA_MASK) == 0) {
+		write_char(&buffer, &count, '-');
+	}
+
+	else {
+		bitboard castling = info & CA_MASK;
+
+		if (state.side_to_move == BLACK) {
+			// flip castling rights
+			castling = ((castling << 2) | (castling >> 2)) & CA_MASK;
+		}
+
+		if (castling & WK_MASK) write_char(&buffer, &count, 'K');
+		if (castling & WQ_MASK) write_char(&buffer, &count, 'Q');
+		if (castling & BK_MASK) write_char(&buffer, &count, 'k');
+		if (castling & BQ_MASK) write_char(&buffer, &count, 'q');
+	}
+
+	// write en-passant square
+	write_char(&buffer, &count, ' ');
+
+	if ((info & EP_MASK) == 0) {
+		write_char(&buffer, &count, lsb(info) + 'a');
+		write_char(&buffer, &count, state.side_to_move == WHITE ? '6' : '3');
+	}
+
+	// write half-move clock
+	write_char(&buffer, &count, ' ');
+	write_int(&buffer, &count, state.fify_move_clock);
+
+	// write full move number
+	write_char(&buffer, &count, ' ');
+	write_int(&buffer, &count, state.movenumber);
+
+	return count;
+}
+
+static inline
+bool more_than_one(bitboard bb) {
+	return (bb & (bb - 1)) != 0;
 }
 
 
-size_t generate_san(struct Move move, struct State state, char *buffer) {
-	return 0;
+size_t generate_san(struct Move move, struct State state, char *buffer, bool check_and_mate) {
+	size_t count = 0;
+
+	// handle castling separately
+	if (move.castling) {
+		if (move.end > move.start) {
+			write_string(&buffer, &count, "O-O");
+		} else {
+			write_string(&buffer, &count, "O-O-O");
+		}
+	}
+
+	else {
+		enum PieceType piece = get_square(state.pos, move.start);
+		bool capture = get_square(state.pos, move.end) != None;
+
+		// flip squares
+		if (state.side_to_move == BLACK) {
+			move.start ^= 56;
+			move.end ^= 56;
+		}
+
+		if (piece == Pawn) {
+			// capture
+			if ((move.start & 7) != (move.end & 7)) {
+				char file = move.start & 7;
+
+				write_char(&buffer, &count, file + 'a');
+				write_char(&buffer, &count, 'x');
+			}
+
+			char file = move.end & 7;
+			char rank = move.end >> 3;
+
+			write_char(&buffer, &count, file + 'a');
+			write_char(&buffer, &count, rank + '1');
+
+			// promotion
+			if (move.piece != Pawn) {
+				write_char(&buffer, &count, '=');
+				write_char(&buffer, &count, "--NBRQ--"[move.piece]);
+			}
+		}
+
+		else {
+			// write piece
+			write_char(&buffer, &count, "--NBRQK-"[piece]);
+
+			// differentiator for multiple possible moves
+			bitboard pieces = extract(state.pos, piece);
+			bitboard occ = occupied(state.pos);
+
+			bitboard possible = generic_attacks(piece, move.end, occ);
+			possible &= pieces;
+
+			// more than two possible pieces
+			if (more_than_one(possible)) {
+				int file = move.start & 7;
+				int rank = move.start >> 3;
+
+				bitboard file_mask = AFILE << move.start;
+
+				// rank differentiator needed
+				if (more_than_one(possible & file_mask)) {
+					write_char(&buffer, &count, rank + '1');
+				} else {
+					write_char(&buffer, &count, file + 'a');
+				}
+			}
+
+			if (capture) {
+				write_char(&buffer, &count, 'x');
+			}
+
+			int file = move.end & 7;
+			int rank = move.end >> 3;
+
+			write_char(&buffer, &count, file + 'a');
+			write_char(&buffer, &count, rank + '1');
+		}
+	}
+
+	if (check_and_mate) {
+		struct Position child = make_move(state.pos, move);
+
+		if (enemy_checks(child)) {
+			struct MoveList moves = generate_moves(child);
+
+			// checkmate (no moves)
+			if (moves.length == 0) {
+				write_char(&buffer, &count, '#');
+			} else {
+				write_char(&buffer, &count, '+');
+			}
+		}
+	}
+
+	return count;
 }
