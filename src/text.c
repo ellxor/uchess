@@ -77,7 +77,11 @@ void log_error(struct Parser *parser, const char *fmt, ...) {
 	fprintf(parser->output, "\n      |  ");
 
 	const char *offset = parser->offset;
-	while (offset > parser->fen) fputc(' ', parser->output);
+
+	while (offset --> parser->fen) {
+		fputc(' ', parser->output);
+	}
+
 	fprintf(parser->output, "^\n\n");
 }
 
@@ -91,7 +95,7 @@ void set_square(struct Position *pos, int sq, enum PieceType T) {
 
 static inline
 enum PieceType get_square(struct Position pos, int sq) {
-	enum PieceType T;
+	enum PieceType T = None;
 
 	T |= ((pos.X >> sq) & 1) << 0;
 	T |= ((pos.Y >> sq) & 1) << 1;
@@ -107,14 +111,14 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 		.output = stream,
 	};
 
-	struct Position pos;
-	struct State state;
+	struct Position pos = {0};
+	struct State state = {0};
 
-	bitboard white, black, info;
+	bitboard white = 0, black = 0, info = 0;
 	int sq = 56, file = 0;
 
 	// parse board
-	while (sq != 8 && file != 8) {
+	while (sq != 8 || file != 8) {
 		unsigned char c = chop_next(&parser);
 		unsigned char lower = 0x20;
 
@@ -225,7 +229,7 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 			goto error;
 		}
 
-		int valid_rank = (state.side_to_move == WHITE) ? 5 : 2; // 6th or 3rd rank
+		unsigned valid_rank = (state.side_to_move == WHITE) ? 5 : 2; // 6th or 3rd rank
 
 		if (rank != valid_rank) {
 			log_error(&parser, "invalid en-passant square; not on correct rank");
@@ -301,25 +305,21 @@ void write_string(char **buffer, size_t *count, const char *str) {
 }
 
 static inline
-void write_int(char **buffer, size_t *count, unsigned x) {
+void write_unsigned(char **buffer, size_t *count, unsigned x) {
 	enum { MAX_DIGITS = 10 };
 
 	char tmp[MAX_DIGITS];
 	size_t length = 0;
 
-	while (x != 0) {
-		tmp[length++] = x % 10;
-		x /= 10;
-	}
+	do { tmp[length++] = (x % 10) + '0'; } while(x /= 10);
+	count += length;
 
 	if (*buffer) {
-		while (length--) {
+		while (length --> 0) {
 			**buffer = tmp[length];
 			*buffer += 1;
 		}
 	}
-
-	count += length;
 }
 
 size_t generate_fen(struct State state, char *buffer) {
@@ -407,17 +407,19 @@ size_t generate_fen(struct State state, char *buffer) {
 	write_char(&buffer, &count, ' ');
 
 	if ((info & EP_MASK) == 0) {
+		write_char(&buffer, &count, '-');
+	} else {
 		write_char(&buffer, &count, lsb(info) + 'a');
 		write_char(&buffer, &count, state.side_to_move == WHITE ? '6' : '3');
 	}
 
 	// write half-move clock
 	write_char(&buffer, &count, ' ');
-	write_int(&buffer, &count, state.fify_move_clock);
+	write_unsigned(&buffer, &count, state.fify_move_clock);
 
 	// write full move number
 	write_char(&buffer, &count, ' ');
-	write_int(&buffer, &count, state.movenumber);
+	write_unsigned(&buffer, &count, state.movenumber);
 
 	return count;
 }
