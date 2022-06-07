@@ -22,3 +22,4 @@ $(LIB):
 clean:
 	rm -rf $(OBJ)
 	rm -rf $(LIB)
+	rm -rf unittest
