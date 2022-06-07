@@ -39,9 +39,16 @@ The three bit pattern is as follows:
 
 The info bitboard contains all of the info relating to the position. The least
 significant 8 bits store the en-passant mask, which represents the 6th rank.
-The next bit stores the actual side to move. Finally, the last 4 bits store the
-castling rights, again where 'white' refers to the side to move, not the actual
-white side.
+Finally, the last 4 bits store the castling rights, again where 'white' refers
+to the side to move, not the actual white side.
+
+Example info bits:
+```
+v~~~ castling rights (right to left: KQkq)
+111100000000
+    ^~~~~~~~ en passant bits (right to left: a-h)
+                             (only one bit can be set, or none)
+```
 
 The info bits are located on the non-occupied squares of the board, of which
 there must be at least 32. Therefore, the `pext` instruction is required to
