@@ -56,11 +56,11 @@ pieces and allowing check.
 ### Performance:
 |position |depth|    nodes|speed (Mnps)|
 |---------|:---:|:-------:|:----------:|
-|startpos |    6|119060324|         200|
-|kiwipete |    5|193690690|         241|
-|position3|    7|178633661|         168|
+|startpos |    6|119060324|         201|
+|kiwipete |    5|193690690|         244|
+|position3|    7|178633661|         171|
 |position4|    6|706045033|         241|
-|position5|    5| 89941194|         226|
-|position6|    5|164075551|         235|
+|position5|    5| 89941194|         230|
+|position6|    5|164075551|         240|
 
-_(measured on Intel i5-9400, using clang 11.0.1)_
+_(measured on Intel i5-9400, using clang 11.0.1, best of 3)_
