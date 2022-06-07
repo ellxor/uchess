@@ -10,6 +10,10 @@ _Note: this code relies on the [BMI2 instruction set](https://en.wikipedia.org/w
 - chess engines (can fit more into caches / LUTs)
 - any chess application
 
+### Usage:
+Run `make` to build the `libuchess.a` archive to be used with `uchess.h`.
+Run `make unittest` to test and benchmark the library.
+
 ### Design:
 
 The position is rotated to the perspective of the current side to move, so
@@ -43,29 +47,6 @@ The info bits are located on the non-occupied squares of the board, of which
 there must be at least 32. Therefore, the `pext` instruction is required to
 align the info to the correct bit positions.
 
-```C
-#include <stdint.h>
-
-typedef uint64_t bitboard;
-
-enum PieceType {
-	None, Pawn, Knight, Bishop, Rook, Queen, King, Info
-};
-
-struct Position {
-	bitboard white, X,Y,Z;
-};
-
-struct PositionInfo {
-	bitboard en_passant:      8,
-	         white_kingside:  1,
-	         white_queenside: 1,
-	         black_kingside:  1,
-	         black_queenside: 1;
-
-};
-```
-
 ### Implementation:
 The move generation is achieved using `pdep/pext` [magic bitboards](https://www.chessprogramming.org/Magic_Bitboards#Fancy)
 for sliding piece attacks. The move generation is fully legal, preventing
@@ -75,11 +56,11 @@ pieces and allowing check.
 ### Performance:
 |position |depth|    nodes|speed (Mnps)|
 |---------|:---:|:-------:|:----------:|
-|startpos |    6|119060324|         192|
-|kiwipete |    5|193690690|         236|
-|position3|    7|178633661|         159|
+|startpos |    6|119060324|         200|
+|kiwipete |    5|193690690|         241|
+|position3|    7|178633661|         168|
 |position4|    6|706045033|         241|
-|position5|    5| 89941194|         220|
+|position5|    5| 89941194|         226|
 |position6|    5|164075551|         235|
 
 _(measured on Intel i5-9400, using clang 11.0.1)_
