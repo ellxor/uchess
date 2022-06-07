@@ -57,6 +57,9 @@ struct MoveList {
 	size_t length;
 };
 
+// initialises tables used for move generation
+void init_bitbase();
+
 struct MoveList generate_moves(struct Position pos);
 struct Position make_move(struct Position pos, struct Move move);
 bitboard enemy_checks(struct Position pos);
