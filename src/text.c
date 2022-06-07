@@ -527,3 +527,27 @@ size_t generate_san(struct Move move, struct State state, char *buffer, bool che
 
 	return count;
 }
+
+
+size_t generate_uci(struct Move move, struct State state, char *buffer) {
+	size_t count = 0;
+
+	bool promotion = get_square(state.pos, move.start) == Pawn
+	              && move.piece != Pawn;
+
+	if (state.side_to_move == BLACK) {
+		move.start ^= 56;
+		move.end ^= 56;
+	}
+
+	write_char(&buffer, &count, (move.start & 7)  + 'a');
+	write_char(&buffer, &count, (move.start >> 3) + '1');
+	write_char(&buffer, &count, (move.end   & 7)  + 'a');
+	write_char(&buffer, &count, (move.end   >> 3) + '1');
+
+	if (promotion) {
+		write_char(&buffer, &count, "--nbrq--"[move.piece]);
+	}
+
+	return count;
+}

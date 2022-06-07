@@ -14,5 +14,6 @@ size_t generate_fen(struct State state, char *buffer);
 
 // standard algebraic notation
 size_t generate_san(struct Move move, struct State state, char *buffer, bool check_and_mate);
+size_t generate_uci(struct Move move, struct State state, char *buffer);
 
 #endif //TEXT_H_
