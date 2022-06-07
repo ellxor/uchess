@@ -23,18 +23,6 @@ static inline bitboard line_between(bitboard a, bitboard b) {
 }
 
 static inline
-bitboard generic_attacks(enum PieceType T, square sq, bitboard occ) {
-	switch (T) {
-		case Knight: return knight_attacks(sq);
-		case Bishop: return bishop_attacks(sq, occ);
-		case Rook:   return rook_attacks(sq, occ);
-		case Queen:  return queen_attacks(sq, occ);
-		case King:   return king_attacks(sq);
-		default:     return 0;
-	}
-}
-
-static inline
 bitboard enemy_attacks(struct Position pos) {
 	bitboard pawns   = extract(pos, Pawn)   & ~pos.white;
 	bitboard knights = extract(pos, Knight) & ~pos.white;
@@ -74,7 +62,6 @@ bitboard enemy_attacks(struct Position pos) {
 	return attacks;
 }
 
-static inline
 bitboard enemy_checks(struct Position pos) {
 	bitboard king = extract(pos, King) & pos.white;
 	square sq = lsb(king);
