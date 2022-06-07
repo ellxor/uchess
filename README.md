@@ -28,14 +28,12 @@ These three bits represent the piece that occupies the nth square on the
 board (A1 = 0, H8 = 63).
 
 The three bit pattern is as follows:
-- 000: None (empty)
-- 001: Pawn
-- 010: Knight
-- 011: Bishop
-- 100: Rook
-- 101: Queen
-- 110: King
-- 111: Info
+```
+000: None         100: Rook
+001: Pawn         101: Queen
+010: Knight       110: King
+011: Bishop       111: Info
+```
 
 The info bitboard contains all of the info relating to the position. The least
 significant 8 bits store the en-passant mask, which represents the 6th rank.
@@ -46,8 +44,7 @@ Example info bits:
 ```
 v~~~ castling rights (right to left: KQkq)
 111100000000
-    ^~~~~~~~ en passant bits (right to left: a-h)
-                             (only one bit can be set, or none)
+    ^~~~~~~~ en passant bits (right to left: a-h), max of one set bit)
 ```
 
 The info bits are located on the non-occupied squares of the board, of which
