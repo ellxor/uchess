@@ -221,8 +221,8 @@ void filter_pinned_moves(struct Position pos, struct MoveList *list) {
 
 	for (size_t i = 0; i < length; i++) {
 		struct Move move = list->moves[i];
-		bitboard mask = 1L << move.start;
-		bitboard dst = 1L << move.end;
+		bitboard mask = 1ULL << move.start;
+		bitboard dst = 1ULL << move.end;
 
 		// remove captured en passant pawn from occupancy
 		if (move.piece == Pawn) {

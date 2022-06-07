@@ -16,18 +16,18 @@ bitboard diagonal(uint8_t n) {
 bitboard sliding_attacks(square sq, bitboard mask, bitboard occ) {
 	occ &= mask;
 
-	bitboard low = occ & ((1L << sq) - 1);
+	bitboard low = occ & ((1ULL << sq) - 1);
 	bitboard high = occ & ~low;
 
 	low = 0x8000000000000000 >> clz(low | 1);
-	return mask & (high ^ (high - low)) & ~(1L << sq);
+	return mask & (high ^ (high - low)) & ~(1ULL << sq);
 }
 
 void init_bitbase() {
 	size_t index = 0;
 
 	for (square sq = 0; sq < 64; sq++) {
-		bitboard bit = 1L << sq;
+		bitboard bit = 1ULL << sq;
 
 		bitbase[sq].knight = shift(N,N,E, bit)
 		                   | shift(E,N,E, bit)

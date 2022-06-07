@@ -156,8 +156,8 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 				goto error;
 			}
 
-			if (c & lower) black |= 1L << sq;
-			else           white |= 1L << sq;
+			if (c & lower) black |= 1ULL << sq;
+			else           white |= 1ULL << sq;
 
 			set_square(&pos, sq, piece);
 			sq++, file++;
@@ -353,7 +353,7 @@ size_t generate_fen(struct State state, char *buffer) {
 			if (state.side_to_move == BLACK) square ^= 56;
 
 			enum PieceType piece = get_square(state.pos, square);
-			bitboard mask = 1L << square;
+			bitboard mask = 1ULL << square;
 
 			if (piece == None || piece == Info) {
 				empty++;
