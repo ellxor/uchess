@@ -13,7 +13,6 @@ default: $(LIB)
 
 unittest:
 	$(CC) -o $@ $(SRC) src/unittest.c $(CFLAGS) $(WARNINGS)
-	@echo
 	./$@
 
 $(LIB):
