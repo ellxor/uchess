@@ -6,6 +6,8 @@
 // note: square must be None
 static inline
 void set_square(struct Position *pos, square sq, enum PieceType T) {
+	assert(sq < 64 && "invalid square");
+
 	pos->X |= (bitboard)((T >> 0) & 1) << sq;
 	pos->Y |= (bitboard)((T >> 1) & 1) << sq;
 	pos->Z |= (bitboard)((T >> 2) & 1) << sq;

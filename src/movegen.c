@@ -1,6 +1,8 @@
 #include "bits.h"
 #include "movegen.h"
 #include "position.h"
+
+#include <assert.h>
 #include <stdbool.h>
 
 static inline
@@ -9,6 +11,8 @@ void append(struct MoveList *list, struct Move move) {
 }
 
 static inline bitboard line_between(bitboard a, bitboard b) {
+	assert(a && b && "bitboards must be populated");
+
 	square sqa = lsb(a);
 	square sqb = lsb(b);
 

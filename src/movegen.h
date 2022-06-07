@@ -1,6 +1,7 @@
 #ifndef MOVEGEN_H_
 #define MOVEGEN_H_
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,7 +32,8 @@ bitboard generic_attacks(enum PieceType T, square sq, bitboard occ) {
 		case Rook:   return rook_attacks(sq, occ);
 		case Queen:  return queen_attacks(sq, occ);
 		case King:   return king_attacks(sq);
-		default:     return 0;
+		default:     assert(0 && "unreachable");
+		             return 0;
 	}
 }
 

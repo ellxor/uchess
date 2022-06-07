@@ -1,6 +1,7 @@
 #ifndef BITS_H_
 #define BITS_H_
 
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <x86intrin.h>
@@ -33,6 +34,7 @@ static inline bitboard shiftW(bitboard bb) { return (bb & ~AFILE) >> 1; }
 #define shift(...) _shift(nargs(__VA_ARGS__), __VA_ARGS__)
 
 static inline square lsb(bitboard bb) {
+	assert(bb != 0 && "bitboard cannot be zero");
 	return __builtin_ctzll(bb);
 }
 
@@ -58,22 +60,27 @@ void init_bitbase();
 
 
 static inline bitboard knight_attacks(square sq) {
+	assert(sq < 64 && "invalid square");
 	return bitbase[sq].knight;
 }
 
 static inline bitboard bishop_attacks(square sq, bitboard occ) {
+	assert(sq < 64 && "invalid square");
 	return bitbase[sq].attacks[0][pext(occ, bitbase[sq].mask[0])];
 }
 
 static inline bitboard rook_attacks(square sq, bitboard occ) {
+	assert(sq < 64 && "invalid square");
 	return bitbase[sq].attacks[1][pext(occ, bitbase[sq].mask[1])];
 }
 
 static inline bitboard queen_attacks(square sq, bitboard occ) {
+	assert(sq < 64 && "invalid square");
 	return bishop_attacks(sq, occ) | rook_attacks(sq, occ);
 }
 
 static inline bitboard king_attacks(square sq) {
+	assert(sq < 64 && "invalid square");
 	return bitbase[sq].king;
 }
 

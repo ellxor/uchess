@@ -1,10 +1,14 @@
 #include "bits.h"
+
+#include <assert.h>
 #include <stddef.h>
 
 bitboard attacks[107648];
 struct bitbase bitbase[64];
 
 bitboard diagonal(uint8_t n) {
+	assert(n < 15 && "only 15 diagonals");
+
 	return (n < 8) ? 0x0102040810204080 >> (8*(7-n))
 	               : 0x0102040810204080 << (8*(n-7));
 }

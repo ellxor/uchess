@@ -87,6 +87,8 @@ void log_error(struct Parser *parser, const char *fmt, ...) {
 
 static inline
 void set_square(struct Position *pos, int sq, enum PieceType T) {
+	assert(0 <= sq && sq < 64 && "invalid square");
+
 	pos->X |= (bitboard)((T >> 0) & 1) << sq;
 	pos->Y |= (bitboard)((T >> 1) & 1) << sq;
 	pos->Z |= (bitboard)((T >> 2) & 1) << sq;
@@ -95,6 +97,7 @@ void set_square(struct Position *pos, int sq, enum PieceType T) {
 
 static inline
 enum PieceType get_square(struct Position pos, int sq) {
+	assert(0 <= sq && sq < 64 && "invalid square");
 	enum PieceType T = None;
 
 	T |= ((pos.X >> sq) & 1) << 0;

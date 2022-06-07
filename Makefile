@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-O3 -march=native
+CFLAGS=-O3 -march=native -g -flto -DNDEBUG
 
 SRC=src/bits.c src/movegen.c src/position.c src/text.c
 OBJ=bits.o movegen.o position.o text.o
