@@ -100,7 +100,7 @@ bitboard occupied(struct Position pos) {
 	return (pos.X ^ pos.Y) | (pos.X ^ pos.Z);
 }
 
-static const struct Position Startpos = {
+static const struct Position startpos = {
     .white = 0x000000000000ffff,
     .X     = 0x2cff00000f00ff2c,
     .Y     = 0x760000000f000076,
