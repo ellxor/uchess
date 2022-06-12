@@ -27,7 +27,7 @@ struct Position {
 	bitboard white, X, Y, Z;
 };
 
-enum Color { BLACK, WHITE };
+enum Color { WHITE, BLACK };
 
 struct State {
 	struct Position pos;
