@@ -5,7 +5,9 @@
 #include "position.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,9 +23,12 @@
 
 struct Parser {
 	FILE *output;
-	const char *fen;
+	const char *in;
 	const char *offset;
 };
+
+static inline
+void log_error(struct Parser *parser, const char *fmt, ...);
 
 static inline
 char peek_next(struct Parser *parser) {
@@ -33,6 +38,16 @@ char peek_next(struct Parser *parser) {
 static inline
 char chop_next(struct Parser *parser) {
 	return *parser->offset++;
+}
+
+static inline
+bool expect_next(struct Parser *parser, char c) {
+	if (chop_next(parser) != c) {
+		log_error(parser, "expected %c", c);
+		return false;
+	}
+
+	return true;
 }
 
 static inline
@@ -73,12 +88,12 @@ void log_error(struct Parser *parser, const char *fmt, ...) {
 	va_end(args);
 
 	// print context
-	fprintf(parser->output, "\n  fen | \"%s\"", parser->fen);
+	fprintf(parser->output, "\n  fen | \"%s\"", parser->in);
 	fprintf(parser->output, "\n      |  ");
 
-	const char *offset = parser->offset;
+	const char *offset = parser->offset - 1;
 
-	while (offset --> parser->fen) {
+	while (offset --> parser->in) {
 		fputc(' ', parser->output);
 	}
 
@@ -109,7 +124,7 @@ enum PieceType get_square(struct Position pos, int sq) {
 
 struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 	struct Parser parser = {
-		.fen = fen,
+		.in = fen,
 		.offset = fen,
 		.output = stream,
 	};
@@ -145,6 +160,12 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 		if ('1' <= c && c <= '8') {
 			int offset = c - '0';
 			sq += offset, file += offset;
+		}
+
+		// check invalid skip digits
+		else if (c == '0' || c == '9') {
+			log_error(&parser, "invalid rank skip amount");
+			goto error;
 		}
 
 		// piece
@@ -266,6 +287,11 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 
 	state.movenumber = chop_int(&parser);
 
+	if (peek_next(&parser) != 0) {
+		log_error(&parser, "trailing characters after fen");
+		goto error;
+	}
+
 	// write info bits
 	bitboard occ = white | black;
 	info = pdep(info, ~occ);
@@ -282,6 +308,270 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 error:
 	*ok = false;
 	return state;
+}
+
+
+struct Move parse_san(const char *san, struct State state, bool *ok, FILE *stream) {
+	struct Parser parser = {
+		.output = stream,
+		.in = san,
+		.offset = san,
+	};
+
+	struct Move move = {0};
+
+	// castling
+	if (peek_next(&parser) == 'O') {
+		chop_next(&parser);
+
+		if (!expect_next(&parser, '-')) goto error;
+		if (!expect_next(&parser, 'O')) goto error;
+
+		enum { C1 = 2, E1 = 4, G1 = 6 };
+
+		move.piece = King;
+		move.start = E1;
+		move.castling = true;
+
+		// castling long (queenside)
+		if (peek_next(&parser) == '-') {
+			chop_next(&parser);
+			if (!expect_next(&parser, 'O')) goto error;
+			move.end = C1;
+		}
+
+		// castling short (kingside)
+		else {
+			move.start = G1;
+		}
+	}
+
+	// pawn move
+	else if (islower(peek_next(&parser))) {
+		move.piece = Pawn;
+
+		unsigned file = chop_next(&parser) - 'a';
+
+		if (file >= 8) {
+			log_error(&parser, "invalid file for pawn move");
+		}
+
+		// capture
+		if (peek_next(&parser) == 'x') {
+			chop_next(&parser);
+
+			unsigned end_file = chop_next(&parser) - 'a';
+
+			if (end_file >= 8) {
+				log_error(&parser, "invalid file");
+				goto error;
+			}
+
+			unsigned end_rank = chop_next(&parser) - '1';
+
+			if (end_rank >= 8) {
+				log_error(&parser, "invalid rank");
+				goto error;
+			}
+
+			if (state.side_to_move == BLACK) {
+				end_rank ^= 7;
+			}
+
+			// chess logic checking
+			if (end_rank < 2) {
+				log_error(&parser, "pawns cannot move to 1st or 2nd rank");
+				goto error;
+			}
+
+			if (file != end_file + 1 && file != end_file - 1) {
+				log_error(&parser, "invalid combination of files for pawn capture");
+			}
+
+			move.end = 8*end_rank + end_file;
+			move.start = 8*(end_rank - 1) + file;
+		}
+
+		// normal move
+		else {
+			unsigned rank = chop_next(&parser) - '1';
+
+			if (rank >= 8) {
+				log_error(&parser, "invalid rank");
+				goto error;
+			}
+
+			if (state.side_to_move == BLACK) {
+				rank ^= 7;
+			}
+
+			if (rank < 2) {
+				log_error(&parser, "pawns cannot move to 1st or 2nd rank");
+				goto error;
+			}
+
+			move.end = 8*rank + file;
+			move.start = move.end + S;
+
+			// check if double move
+			bitboard occ = occupied(state.pos);
+
+			if (rank == 3 && (~occ >> move.start) & 1) {
+				move.start += S;
+			}
+		}
+
+		// promotion
+		if (peek_next(&parser) == '=') {
+			chop_next(&parser);
+
+			if (move.end < 56) {
+				log_error(&parser, "pawn move must be on 8th rank to promote");
+				goto error;
+			}
+
+			unsigned char lower = 0x20;
+			enum PieceType piece = lookup[chop_next(&parser) | lower];
+
+			if (piece == None) {
+				log_error(&parser, "invalid piece type");
+				goto error;
+			}
+
+			if (piece == Pawn || piece == King) {
+				log_error(&parser, "pawn cannot promote to this piece");
+				goto error;
+			}
+
+			move.piece = piece;
+		}
+	}
+
+	// piece move
+	else {
+		unsigned char lower = 0x20;
+		move.piece = lookup[chop_next(&parser) | lower];
+
+		if (move.piece == None) {
+			log_error(&parser, "invalid piece");
+			goto error;
+		}
+
+		bitboard pieces = extract(state.pos, move.piece);
+		bitboard mask = ~0;
+
+		bool capture = false;
+
+		// rank specifier
+		if ('1' <= peek_next(&parser) && peek_next(&parser) <= '8') {
+			unsigned rank = chop_next(&parser) - '1';
+			if (state.side_to_move == BLACK) rank ^= 7;
+
+			mask &= RANK1 << (8 * rank);
+
+			if (peek_next(&parser) == 'x') {
+				chop_next(&parser);
+				capture = true;
+			}
+		}
+
+		unsigned file = chop_next(&parser) - 'a';
+
+		if (file >= 8) {
+			log_error(&parser, "invalid file");
+			goto error;
+		}
+
+		// file specifier
+		if ('a' <= peek_next(&parser) && peek_next(&parser) <= 'h') {
+			mask &= AFILE << file;
+			file = chop_next(&parser) - 'a';
+
+			if (peek_next(&parser) == 'x') {
+				chop_next(&parser);
+				capture = true;
+			}
+		}
+
+		unsigned rank = chop_next(&parser) - '1';
+		if (state.side_to_move == BLACK) rank ^= 7;
+
+		if (rank >= 8) {
+			log_error(&parser, "invalid rank");
+			goto error;
+		}
+
+		move.end = 8*rank + file;
+
+		// file and specifier (very rare)
+		if ('a' <= peek_next(&parser) && peek_next(&parser) <= 'h' || peek_next(&parser) == 'x') {
+			if (peek_next(&parser) == 'x') {
+				chop_next(&parser);
+				capture = true;
+			}
+
+			move.start = move.end;
+
+			file = chop_next(&parser) - 'a';
+			rank = chop_next(&parser) - '0';
+
+			if (rank >= 8) {
+				log_error(&parser, "invalid rank");
+			}
+
+			if (state.side_to_move == BLACK) {
+				rank ^= 7;
+			}
+
+			move.end = 8*rank + file;
+		}
+
+		// TODO: handle pins (extreme pain)
+		else {
+			bitboard occ = occupied(state.pos);
+			bitboard possible = generic_attacks(move.piece, move.end, occ);
+			possible &= pieces & mask & state.pos.white;
+
+			if (!possible) {
+				log_error(&parser, "no pieces match the specified destination square");
+				goto error;
+			}
+
+			if (possible & (possible - 1)) {
+				log_error(&parser, "piece speicifer is ambiguous, multiple possible moves");
+				goto error;
+			}
+
+			move.start = lsb(possible);
+
+		}
+	}
+
+	// ignore check and mate tags (for now...)
+	if (peek_next(&parser) == '+') chop_next(&parser);
+	if (peek_next(&parser) == '#') chop_next(&parser);
+
+	if (peek_next(&parser) != 0) {
+		log_error(&parser, "trailing characters after SAN");
+		goto error;
+	}
+
+	*ok = true;
+	return move;
+
+error:
+	*ok = false;
+	return move;
+}
+
+
+struct Move parse_uci(const char *uci, struct State state, bool *ok, FILE *stream) {
+	struct Move move = {0};
+
+	// TODO: implement parsing uci moves
+	//       should be much simpler (too tired now)
+
+	return move;
 }
 
 
