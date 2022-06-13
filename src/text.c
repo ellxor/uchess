@@ -503,7 +503,7 @@ struct Move parse_san(const char *san, struct State state, bool *ok, FILE *strea
 
 		move.end = 8*rank + file;
 
-		// file and specifier (very rare)
+		// file and rank specifier (very rare)
 		if ('a' <= peek_next(&parser) && peek_next(&parser) <= 'h' || peek_next(&parser) == 'x') {
 			if (peek_next(&parser) == 'x') {
 				chop_next(&parser);
