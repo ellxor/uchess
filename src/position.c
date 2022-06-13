@@ -15,7 +15,7 @@ void set_square(struct Position *pos, square sq, enum PieceType T) {
 
 struct Position make_move(struct Position pos, struct Move move) {
 	bitboard occ = occupied(pos);
-	bitboard info = pext(extract(pos, Info), ~occ);\
+	bitboard info = pext(extract(pos, Info), ~occ);
 	bitboard ep_mask = (info & EP_MASK) << 40;
 
 	enum { A1 = 0, E1 = 4, H1 = 7, A8 = 56, H8 = 63 };
