@@ -19,6 +19,7 @@ struct MoveList {
 	size_t length;
 };
 
+// NOTE: these functions assume legal positions and moves
 struct MoveList generate_moves(struct Position pos);
 struct Position make_move(struct Position pos, struct Move move);
 
