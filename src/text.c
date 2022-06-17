@@ -356,7 +356,7 @@ struct Move parse_san(const char *san, struct State state, bool *ok, FILE *strea
 
 		// castling short (kingside)
 		else {
-			move.start = G1;
+			move.end = G1;
 		}
 	}
 
