@@ -185,6 +185,8 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 		}
 	}
 
+	pos.white = white;
+
 	if (chop_next(&parser) != ' ') {
 		log_error(&parser, "expected space before side-to-move");
 		goto error;
@@ -192,8 +194,8 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 
 	// side-to-move
 	switch (chop_next(&parser)) {
-		case 'w': state.side_to_move = WHITE; pos.white = white; break;
-		case 'b': state.side_to_move = BLACK; pos.white = black; break;
+		case 'w': state.side_to_move = WHITE; break;
+		case 'b': state.side_to_move = BLACK; break;
 
 		default:
 			log_error(&parser, "expected w or b for side-to-move");
@@ -221,11 +223,11 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 				log_error(&parser, "expected one of KQkq for castling rights");
 				goto error;
 		}
+	}
 
-		if (state.side_to_move == BLACK) {
-			// swap castling sides
-			info = ((info << 2) | (info >> 2)) & CA_MASK;
-		}
+	if (state.side_to_move == BLACK) {
+		// swap castling sides
+		info = ((info << 2) | (info >> 2)) & CA_MASK;
 	}
 
 	if (chop_next(&parser) != ' ') {
@@ -290,6 +292,17 @@ struct State parse_fen(const char *fen, bool *ok, FILE *stream) {
 	if (peek_next(&parser) != 0) {
 		log_error(&parser, "trailing characters after fen");
 		goto error;
+	}
+
+	// rotate boards if necessary
+	if (state.side_to_move == BLACK) {
+		white = rotate(white);
+		black = rotate(black);
+
+		pos.white = black;
+		pos.X = rotate(pos.X);
+		pos.Y = rotate(pos.Y);
+		pos.Z = rotate(pos.Z);
 	}
 
 	// write info bits
@@ -505,7 +518,7 @@ struct Move parse_san(const char *san, struct State state, bool *ok, FILE *strea
 		move.end = 8*rank + file;
 
 		// file and rank specifier (very rare)
-		if ('a' <= peek_next(&parser) && peek_next(&parser) <= 'h' || peek_next(&parser) == 'x') {
+		if (('a' <= peek_next(&parser) && peek_next(&parser) <= 'h') || peek_next(&parser) == 'x') {
 			if (peek_next(&parser) == 'x') {
 				chop_next(&parser);
 				capture = true;
