@@ -51,7 +51,7 @@ static inline bitboard pext(bitboard bb, bitboard mask) {
 	return _pext_u64(bb, mask);
 }
 
-static inline bitboard reverse(bitboard bb) {
+static inline bitboard rotate(bitboard bb) {
 	return __builtin_bswap64(bb);
 }
 

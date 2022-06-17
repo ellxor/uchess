@@ -53,7 +53,7 @@ void init_bitbase() {
 		// bishop sliders
 		{
 			bitboard mask1 = diagonal(rank + file);
-			bitboard mask2 = reverse(diagonal(7-rank + file));
+			bitboard mask2 = rotate(diagonal(7-rank + file));
 
 			// remove outer and square bits
 			bitboard mask = (mask1 | mask2) & ~(RANK1 | RANK8 | AFILE | HFILE | bit);
