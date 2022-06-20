@@ -790,7 +790,7 @@ size_t generate_san(struct Move move, struct State state, char *buffer, bool che
 			bitboard occ = occupied(state.pos);
 
 			bitboard possible = generic_attacks(piece, move.end, occ);
-			possible &= pieces;
+			possible &= pieces & state.pos.white;
 
 			// more than two possible pieces
 			if (more_than_one(possible)) {
