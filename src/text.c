@@ -582,9 +582,52 @@ error:
 struct Move parse_uci(const char *uci, struct State state, bool *ok, FILE *stream) {
 	struct Move move = {0};
 
-	// TODO: implement parsing uci moves
-	//       should be much simpler (too tired now)
+	struct Parser parser = {
+		.output = stream,
+		.in = uci,
+		.offset = uci,
+	};
 
+	unsigned start_file, start_rank, end_file, end_rank;
+
+	if ((start_file = chop_next(&parser) - 'a') >= 8) goto invalid_file;
+	if ((start_rank = chop_next(&parser) - '1') >= 8) goto invalid_rank;
+	if ((end_file   = chop_next(&parser) - 'a') >= 8) goto invalid_file;
+	if ((end_rank   = chop_next(&parser) - '1') >= 8) goto invalid_rank;
+
+	move.start = 8*start_rank + start_file;
+	move.end = 8*end_rank + end_file;
+
+	// promotion
+	if (peek_next(&parser)) {
+		move.piece = lookup[chop_next(&parser)];
+		if (move.piece == None || move.piece == Pawn || move.piece == King) {
+			log_error(&parser, "invalid promotion piece");
+			goto error;
+		}
+	}
+
+	else {
+		get_square(state.pos, move.start);
+	}
+
+	enum { C1 = 2, E1 = 4, G1 = 6 };
+
+	// set castling flag (if needed)
+	if (move.piece == King && move.start == E1) {
+		if (move.end == C1 || move.end == G1) {
+			move.castling = true;
+		}
+	}
+
+	*ok = true;
+	return move;
+
+	if (0) invalid_file: log_error(&parser, "invalid file");
+	if (0) invalid_rank: log_error(&parser, "invalid rank");
+
+error:
+	*ok = false;
 	return move;
 }
 
