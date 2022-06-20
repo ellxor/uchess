@@ -598,6 +598,11 @@ struct Move parse_uci(const char *uci, struct State state, bool *ok, FILE *strea
 	move.start = 8*start_rank + start_file;
 	move.end = 8*end_rank + end_file;
 
+	// rotate board for black
+	if (state.side_to_move == BLACK) {
+		move.start ^= 56, move.end ^= 56;
+	}
+
 	// promotion
 	if (peek_next(&parser)) {
 		move.piece = lookup[chop_next(&parser)];
