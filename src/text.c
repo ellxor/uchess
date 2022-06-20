@@ -797,13 +797,18 @@ size_t generate_san(struct Move move, struct State state, char *buffer, bool che
 				int file = move.start & 7;
 				int rank = move.start >> 3;
 
-				bitboard file_mask = AFILE << move.start;
+				bitboard file_mask = AFILE << file;
+				bitboard rank_mask = RANK1 << rank;
 
-				// rank differentiator needed
+				// check if differentiators needed
+				// note: some moves need both rank and file differentiators
+
+				if (more_than_one(possible & rank_mask)) {
+					write_char(&buffer, &count, file + 'a');
+				}
+
 				if (more_than_one(possible & file_mask)) {
 					write_char(&buffer, &count, rank + '1');
-				} else {
-					write_char(&buffer, &count, file + 'a');
 				}
 			}
 
